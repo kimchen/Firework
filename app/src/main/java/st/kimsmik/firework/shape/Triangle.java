@@ -15,14 +15,14 @@ import st.kimsmik.firework.Vector3;
  * Created by chenk on 2016/2/1.
  */
 public class Triangle {
-    private final String vertexShaderCode =
+    private static final String vertexShaderCode =
                     "uniform mat4 uMVPMatrix;" +
                     "attribute vec4 vPosition;" +
                     "void main() {" +
                     "  gl_Position = uMVPMatrix * vPosition;" +
                     "}";
 
-    private final String fragmentShaderCode =
+    private static final String fragmentShaderCode =
                     "precision mediump float;" +
                     "uniform vec4 vColor;" +
                     "void main() {" +
@@ -31,9 +31,9 @@ public class Triangle {
     private static final int COORDS_PER_VERTEX = 3;
     // in counterclockwise order:
     private static float triangleCoords[] = {
-            0.0f,  1f, 0.0f, // top
-            -0.5f, 0f, 0.0f, // bottom left
-            0.5f, 0f, 0.0f  // bottom right
+            0.0f,  0.2f, 0.0f, // top
+            -0.1f, 0f, 0.0f, // bottom left
+            0.1f, 0f, 0.0f  // bottom right
     };
     // rgba
     private float mColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -41,8 +41,21 @@ public class Triangle {
     private Vector3 mScale = new Vector3(1f,1f,1f);
     private Vector3 mRoateAxis = new Vector3(0f,0f,1f);
     private float mRotateAngle = 0f;
-    private final int mProgram;
+    private static int mProgram;
     private FloatBuffer vertexBuffer = null;
+
+    public static void init(){
+        int vertexShader = FireworkUtility.loadShader(GLES20.GL_VERTEX_SHADER,vertexShaderCode);
+        int fragmentShader = FireworkUtility.loadShader(GLES20.GL_FRAGMENT_SHADER,fragmentShaderCode);
+        // create empty OpenGL ES Program
+        mProgram = GLES20.glCreateProgram();
+        // add the vertex shader to program
+        GLES20.glAttachShader(mProgram, vertexShader);
+        // add the fragment shader to program
+        GLES20.glAttachShader(mProgram, fragmentShader);
+        // creates OpenGL ES program executables
+        GLES20.glLinkProgram(mProgram);
+    }
 
     public Triangle() {
         // initialize vertex byte buffer for shape coordinates
@@ -56,20 +69,17 @@ public class Triangle {
         // set the buffer to read the first coordinate
         vertexBuffer.position(0);
 
-        int vertexShader = FireworkUtility.loadShader(GLES20.GL_VERTEX_SHADER,vertexShaderCode);
-        int fragmentShader = FireworkUtility.loadShader(GLES20.GL_FRAGMENT_SHADER,fragmentShaderCode);
-        // create empty OpenGL ES Program
-        mProgram = GLES20.glCreateProgram();
-        // add the vertex shader to program
-        GLES20.glAttachShader(mProgram, vertexShader);
-        // add the fragment shader to program
-        GLES20.glAttachShader(mProgram, fragmentShader);
-        // creates OpenGL ES program executables
-        GLES20.glLinkProgram(mProgram);
+
     }
 
     public void setPosition(Vector3 position){
         mPosition = position;
+    }
+    public Vector3 getPosition(){
+        return mPosition;
+    }
+    public void Translate(Vector3 trans){
+        mPosition = new Vector3(mPosition.getX()+trans.getX(), mPosition.getY()+trans.getY(), mPosition.getZ()+trans.getZ());
     }
     public void setScale(Vector3 scale){
         mScale = scale;
@@ -95,8 +105,8 @@ public class Triangle {
 
         int mColorHandle = GLES20.glGetUniformLocation(mProgram, "vColor");
         GLES20.glUniform4fv(mColorHandle, 1, mColor, 0);
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, vertexCount);
-        GLES20.glDisableVertexAttribArray(mPositionHandle);
+        //GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, vertexCount);
+        //GLES20.glDisableVertexAttribArray(mPositionHandle);
 
         float []resultMatrix = new float[16];
         float []rotationMatrix = new float[16];
@@ -104,7 +114,6 @@ public class Triangle {
         Matrix.multiplyMM(resultMatrix, 0, mvpMatrix, 0, rotationMatrix, 0);
         Matrix.translateM(resultMatrix, 0, mPosition.getX(), mPosition.getY(), mPosition.getZ());
         Matrix.scaleM(resultMatrix, 0, mScale.getX(), mScale.getY(), mScale.getZ());
-
 
         int mMVPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix");
         GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, resultMatrix, 0);
