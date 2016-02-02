@@ -8,31 +8,48 @@ import java.util.List;
  */
 public class FireworkTrail {
 
-    private List<Partical> mParticalList = new ArrayList<>();
+    private List<List<Partical>> mParticalList = new ArrayList<>();
     private int mLength = 5;
+    private Vector3 mColor = new Vector3();
 
     public FireworkTrail(int len){
         mLength = len;
     }
     public void setPosition(Vector3 position){
         synchronized (mParticalList) {
-            if (mParticalList.size() < mLength) {
-                Partical partical = new Partical();
-                partical.setPosition(position);
-                mParticalList.add(partical);
-            } else {
-                mParticalList.remove(0);
-                Partical partical = new Partical();
-                partical.setPosition(position);
-                mParticalList.add(partical);
+            Vector3 lastPosition = null;
+            for(int i=0; i<mLength; i++){
+                Vector3 newPosition = lastPosition;
+                if(newPosition == null){
+                    newPosition = position;
+                }
+
+                if(mParticalList.size() <= i){
+                    int particalNum = (mLength - i) * 3;
+                    List<Partical> particals = new ArrayList<>();
+                    for(int j=0; j<particalNum; j++){
+                        Partical partical = new Partical();
+                        partical.setPosition(newPosition);
+                        partical.Translate(new Vector3(i>0?(float)(Math.random()-0.5f):0f,i>0?(float)(Math.random()-0.5f):0f,0f));
+                        partical.setColor(mColor.getX(), mColor.getY(), mColor.getZ(), 1f);
+                        particals.add(partical);
+                    }
+                    mParticalList.add(particals);
+                    break;
+                }else{
+                    List<Partical> particals = mParticalList.get(i);
+                    lastPosition = particals.get(0).getPosition();
+                    for(Partical partical : particals){
+                        partical.setPosition(newPosition);
+                        partical.Translate(new Vector3(i>0?(float)(Math.random()-0.5f):0f,i>0?(float)(Math.random()-0.5f):0f,0f));
+                    }
+                }
             }
         }
     }
 
-    public void setColor(float r, float g, float b, float a){
-        for(Partical partical : mParticalList){
-            partical.setColor(r, g, b, a);
-        }
+    public void setColor(Vector3 color){
+        mColor = color;
     }
 
     public void release(){
@@ -41,8 +58,10 @@ public class FireworkTrail {
 
     public void draw(float[] mvpMatrix) {
         synchronized (mParticalList) {
-            for (Partical partical : mParticalList) {
-                partical.draw(mvpMatrix);
+            for(List<Partical> particals : mParticalList){
+                for (Partical partical : particals) {
+                    partical.draw(mvpMatrix);
+                }
             }
         }
     }

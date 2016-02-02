@@ -1,11 +1,8 @@
 package st.kimsmik.firework;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * Created by Kim on 2016/2/1.
@@ -31,80 +28,70 @@ public class Firework {
 
     public Firework(int size, Vector3 anchor){
         mSize = size;
-        mColor = new Vector3((float)Math.random(),(float)Math.random(),(float)Math.random());
+        randomColor();
         explore(anchor);
     }
 
     public Firework(int size, List<Vector3> trailPos, long trailTime){
         mSize = size;
-        mColor = new Vector3((float)Math.random(),(float)Math.random(),(float)Math.random());
+        randomColor();
         mTrailPos = trailPos;
         mTrail = new FireworkTrail(size);
-        mTrail.setColor(mColor.getX(),mColor.getY(),mColor.getZ(),1f);
+        mTrail.setColor(mColor);
         mTrailTime = trailTime;
         startTrail();
     }
 
-    public void setFadeout(final long time){
-        Timer timer = new Timer();
-        final long startTime = Calendar.getInstance().getTimeInMillis();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                double deltaTime = (Calendar.getInstance().getTimeInMillis()-startTime);
-                double theta = (double)(deltaTime/time) * (float)Math.PI / 2 ;
-                float alpha = (float)Math.cos(theta);
-                setAlpha(alpha);
-            }
-        },(long)(1000/FireworkUtility.FPS),(long)(time/(1000/FireworkUtility.FPS)));
+    private void randomColor(){
+        mColor = new Vector3((float)Math.random()/2f+0.5f,(float)Math.random()/2f+0.5f,(float)Math.random()/2f+0.5f);
     }
 
     public void explore(Vector3 anchor){
         Random random = new Random();
         int type = random.nextInt()%FIREWORK_TYPE.MAX_NUM.value;
-        for(int i=0; i < mSize; i++){
-            FireworkCircle circle;
-            if(type==FIREWORK_TYPE.HEART.value) {
-                circle = new FireworkHeart(i * 10, anchor, i * 0.5f + 0.5f);
-            }else if(type==FIREWORK_TYPE.STAR.value) {
-                circle = new FireworkStar(i * 10, anchor, i * 0.5f + 0.5f);
-            }else{
-                circle = new FireworkCircle(i * 10, anchor, i * 0.5f + 0.5f);
+        synchronized (mCircleList) {
+            for (int i = 0; i < mSize; i++) {
+                FireworkCircle circle;
+                if (type == FIREWORK_TYPE.HEART.value) {
+                    circle = new FireworkHeart(i * 10, anchor, i * 0.5f + 0.5f);
+                } else if (type == FIREWORK_TYPE.STAR.value) {
+                    circle = new FireworkStar(i * 10, anchor, i * 0.5f + 0.5f);
+                } else {
+                    circle = new FireworkCircle(i * 10, anchor, i * 0.5f + 0.5f);
+                }
+                circle.startAnim(0);
+                circle.setColor(mColor.getX(), mColor.getY(), mColor.getZ(), 1f);
+                mCircleList.add(circle);
             }
-            circle.startAnim(0);
-            circle.setColor(mColor.getX(),mColor.getY(),mColor.getZ(),1f);
-            mCircleList.add(circle);
-        }
-
-    }
-
-    public void setAlpha(float a){
-        for(FireworkCircle circle : mCircleList){
-            circle.setColor(mColor.getX(),mColor.getY(),mColor.getZ(),a);
-        }
-        if(mTrail != null){
-            mTrail.setColor(mColor.getX(), mColor.getY(), mColor.getZ(), a);
         }
     }
 
     public void drawParticals(float[] mvpMatrix){
-        for(FireworkCircle circle : mCircleList){
-            circle.drawParticals(mvpMatrix);
+        synchronized (mCircleList) {
+            for (FireworkCircle circle : mCircleList) {
+                circle.drawParticals(mvpMatrix);
+            }
         }
         if(mTrail != null){
-            mTrail.draw(mvpMatrix);
+            synchronized (mTrail) {
+                mTrail.draw(mvpMatrix);
+            }
         }
     }
 
     public void release(){
-        for(FireworkCircle circle : mCircleList){
-            circle.release();
+        synchronized (mCircleList) {
+            for (FireworkCircle circle : mCircleList) {
+                circle.release();
+            }
+            mCircleList.clear();
         }
         if(mTrail != null) {
-            mTrail.release();
-            mTrail = null;
+            synchronized (mTrail) {
+                mTrail.release();
+                mTrail = null;
+            }
         }
-        mCircleList.clear();
         mTrailPos.clear();
     }
 
@@ -128,8 +115,10 @@ public class Firework {
                         break;
                     }
                 }
-                mTrail.release();
-                mTrail = null;
+                synchronized (mTrail) {
+                    mTrail.release();
+                    mTrail = null;
+                }
                 explore(mTrailPos.get(mTrailPos.size()-1));
             }
         });

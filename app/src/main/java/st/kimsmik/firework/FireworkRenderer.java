@@ -38,7 +38,7 @@ public class FireworkRenderer implements GLSurfaceView.Renderer {
 
         GLES20.glViewport(0, 0, width, height);
         float ratio = (float) width / height;
-        Matrix.frustumM(mProjectionMatrix, 0, -ratio * FireworkUtility.SCENE_HEIGHT / 2, ratio * FireworkUtility.SCENE_HEIGHT / 2, 0f, 1f * FireworkUtility.SCENE_HEIGHT, 0.1f, 100.0f);
+        Matrix.frustumM(mProjectionMatrix, 0, -ratio * FireworkUtility.SCENE_HEIGHT / 2, ratio * FireworkUtility.SCENE_HEIGHT / 2, 0f, 1f * FireworkUtility.SCENE_HEIGHT, 1f, 100.0f);
     }
 
     public void addFirework(int size, Vector3 position){

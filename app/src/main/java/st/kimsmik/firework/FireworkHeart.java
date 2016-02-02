@@ -11,7 +11,7 @@ public class FireworkHeart extends FireworkCircle{
 
     @Override
     protected void init() {
-        for(int i=0; i < mSize; i++){
+        for(int i=0; i <= mSize; i++){
             Partical partical = new Partical();
             partical.setPosition(mAnchor);
             mParticalList.add(partical);
@@ -22,7 +22,7 @@ public class FireworkHeart extends FireworkCircle{
             vList.add(v);
         }
 
-        for(int i=0; i < mSize; i++){
+        for(int i=0; i <= mSize; i++){
             Partical partical = new Partical();
             partical.setPosition(mAnchor);
             mParticalList.add(partical);

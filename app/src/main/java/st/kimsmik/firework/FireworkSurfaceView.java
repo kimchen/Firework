@@ -35,10 +35,17 @@ public class FireworkSurfaceView extends GLSurfaceView {
             case MotionEvent.ACTION_DOWN:
                 touchStartTime = Calendar.getInstance().getTimeInMillis();
                 touchPos = new ArrayList<>();
-
+                break;
             case MotionEvent.ACTION_MOVE:
-                touchPos.add(FireworkUtility.convert3DPostion(x, y));
-
+                Vector3 newPos = FireworkUtility.convert3DPostion(x, y);
+                if(touchPos.size() > 0){
+                    Vector3 lastPos = touchPos.get(touchPos.size() - 1);
+                    double distance = Math.sqrt(Math.pow(lastPos.getX() - newPos.getX(), 2) + Math.pow(lastPos.getY() - newPos.getY(), 2));
+                    if(distance < 1)
+                        break;
+                }
+                touchPos.add(newPos);
+                break;
             case MotionEvent.ACTION_UP:
                 long deltaTime = Calendar.getInstance().getTimeInMillis() - touchStartTime;
                 int size = (int)deltaTime / 500 + 3;
@@ -48,6 +55,10 @@ public class FireworkSurfaceView extends GLSurfaceView {
                 }else{
                     mRenderer.addFirework(size,touchPos,deltaTime);
                 }
+                break;
+            case MotionEvent.ACTION_POINTER_UP:
+                mRenderer.addFirework(3,FireworkUtility.convert3DPostion(x, y));
+                break;
         }
         return true;
     }
