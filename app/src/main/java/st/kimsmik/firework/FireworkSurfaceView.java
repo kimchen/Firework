@@ -2,8 +2,11 @@ package st.kimsmik.firework;
 
 import android.content.Context;
 import android.opengl.GLSurfaceView;
-import android.util.Log;
 import android.view.MotionEvent;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
 
 
 /**
@@ -17,24 +20,35 @@ public class FireworkSurfaceView extends GLSurfaceView {
         setEGLContextClientVersion(2);
         mRenderer = new FireworkRenderer();
         setRenderer(mRenderer);
-        // Render the view only when there is a change in the drawing data
         //setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
     }
 
+    private long touchStartTime = 0;
+    private List<Vector3> touchPos = new ArrayList<>();
     @Override
     public boolean onTouchEvent(MotionEvent e) {
-        // MotionEvent reports input details from the touch screen
-        // and other input controls. In this case, you are only
-        // interested in events where the touch position changed.
 
         float x = e.getX();
         float y = e.getY();
-        Log.w("Firework","pos:"+x+","+y);
+
         switch (e.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                mRenderer.addFirework(FireworkUtility.convert3DPostion(x, y));
-        }
+                touchStartTime = Calendar.getInstance().getTimeInMillis();
+                touchPos = new ArrayList<>();
 
+            case MotionEvent.ACTION_MOVE:
+                touchPos.add(FireworkUtility.convert3DPostion(x, y));
+
+            case MotionEvent.ACTION_UP:
+                long deltaTime = Calendar.getInstance().getTimeInMillis() - touchStartTime;
+                int size = (int)deltaTime / 500 + 3;
+                size = size>10?10:size;
+                if(touchPos.size() < 5){
+                    mRenderer.addFirework(size,FireworkUtility.convert3DPostion(x, y));
+                }else{
+                    mRenderer.addFirework(size,touchPos,deltaTime);
+                }
+        }
         return true;
     }
 }

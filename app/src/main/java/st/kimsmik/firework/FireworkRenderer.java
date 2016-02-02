@@ -3,17 +3,11 @@ package st.kimsmik.firework;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
-import android.os.SystemClock;
 
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.Vector;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -44,11 +38,28 @@ public class FireworkRenderer implements GLSurfaceView.Renderer {
 
         GLES20.glViewport(0, 0, width, height);
         float ratio = (float) width / height;
-        Matrix.frustumM(mProjectionMatrix,0,-ratio*FireworkUtility.SCENE_HEIGHT/2,ratio*FireworkUtility.SCENE_HEIGHT/2,0f,1f*FireworkUtility.SCENE_HEIGHT,1f,100f);
+        Matrix.frustumM(mProjectionMatrix, 0, -ratio * FireworkUtility.SCENE_HEIGHT / 2, ratio * FireworkUtility.SCENE_HEIGHT / 2, 0f, 1f * FireworkUtility.SCENE_HEIGHT, 0.1f, 100.0f);
     }
 
-    public void addFirework(Vector3 position){
-        final Firework firework = new Firework(5,position);
+    public void addFirework(int size, Vector3 position){
+        final Firework firework = new Firework(size,position);
+        Timer t = new Timer();
+        t.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                synchronized (mFireworkList) {
+                    firework.release();
+                    mFireworkList.remove(firework);
+                }
+            }
+        }, FireworkUtility.FIREWORK_LIFE_TIME);
+        synchronized(mFireworkList) {
+            mFireworkList.add(firework);
+        }
+    }
+
+    public void addFirework(int size, List<Vector3> trailPos, long trailTime){
+        final Firework firework = new Firework(size,trailPos,trailTime);
         Timer t = new Timer();
         t.schedule(new TimerTask() {
             @Override
@@ -58,13 +69,12 @@ public class FireworkRenderer implements GLSurfaceView.Renderer {
                     mFireworkList.remove(firework);
                 }
             }
-        },5000);
+        },FireworkUtility.FIREWORK_LIFE_TIME+trailTime);
         synchronized(mFireworkList) {
             mFireworkList.add(firework);
         }
     }
 
-    private long lastMillis = 0;
     @Override
     public void onDrawFrame(GL10 gl) {
 
@@ -77,21 +87,5 @@ public class FireworkRenderer implements GLSurfaceView.Renderer {
                 firework.drawParticals(mMVPMatrix);
             }
         }
-        //onUpdate();
     }
-
-//    public void onUpdate(){
-//        if(lastMillis == 0){
-//            lastMillis = Calendar.getInstance().getTimeInMillis();
-//            return;
-//        }
-//        long nowMillis = Calendar.getInstance().getTimeInMillis();
-//        float deltaTime = ((float)nowMillis-lastMillis)/1000f;
-//        synchronized(mFireworkList) {
-//            for (Firework firework : mFireworkList) {
-//                firework.update(deltaTime);
-//            }
-//        }
-//        lastMillis = nowMillis;
-//    }
 }

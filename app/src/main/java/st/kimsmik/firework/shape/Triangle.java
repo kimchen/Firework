@@ -35,14 +35,17 @@ public class Triangle {
             -0.1f, 0f, 0.0f, // bottom left
             0.1f, 0f, 0.0f  // bottom right
     };
+    private static int mProgram;
+    private static FloatBuffer vertexBuffer = null;
+
     // rgba
     private float mColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
     private Vector3 mPosition = new Vector3(0f,0f,0f);
     private Vector3 mScale = new Vector3(1f,1f,1f);
     private Vector3 mRoateAxis = new Vector3(0f,0f,1f);
     private float mRotateAngle = 0f;
-    private static int mProgram;
-    private FloatBuffer vertexBuffer = null;
+    private float []resultMatrix = new float[16];
+    private boolean isDirty = true;
 
     public static void init(){
         int vertexShader = FireworkUtility.loadShader(GLES20.GL_VERTEX_SHADER,vertexShaderCode);
@@ -55,9 +58,6 @@ public class Triangle {
         GLES20.glAttachShader(mProgram, fragmentShader);
         // creates OpenGL ES program executables
         GLES20.glLinkProgram(mProgram);
-    }
-
-    public Triangle() {
         // initialize vertex byte buffer for shape coordinates
         ByteBuffer bb = ByteBuffer.allocateDirect(triangleCoords.length * 4);
         // use the device hardware's native byte order
@@ -68,21 +68,24 @@ public class Triangle {
         vertexBuffer.put(triangleCoords);
         // set the buffer to read the first coordinate
         vertexBuffer.position(0);
-
-
     }
+
+    public Triangle() {}
 
     public void setPosition(Vector3 position){
         mPosition = position;
+        isDirty = true;
     }
     public Vector3 getPosition(){
         return mPosition;
     }
     public void Translate(Vector3 trans){
         mPosition = new Vector3(mPosition.getX()+trans.getX(), mPosition.getY()+trans.getY(), mPosition.getZ()+trans.getZ());
+        isDirty = true;
     }
     public void setScale(Vector3 scale){
         mScale = scale;
+        isDirty = true;
     }
     public void setColor(float r, float g, float b, float a){
         mColor = new float[]{r,g,b,a};
@@ -90,6 +93,7 @@ public class Triangle {
     public void setRotate(float angle, Vector3 axis){
         this.mRotateAngle = angle;
         this.mRoateAxis = axis;
+        isDirty = true;
     }
 
     public void draw(float[] mvpMatrix) {
@@ -108,12 +112,13 @@ public class Triangle {
         //GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, vertexCount);
         //GLES20.glDisableVertexAttribArray(mPositionHandle);
 
-        float []resultMatrix = new float[16];
-        float []rotationMatrix = new float[16];
-        Matrix.setRotateM(rotationMatrix, 0, mRotateAngle, mRoateAxis.getX(), mRoateAxis.getY(), 1f);
-        Matrix.multiplyMM(resultMatrix, 0, mvpMatrix, 0, rotationMatrix, 0);
-        Matrix.translateM(resultMatrix, 0, mPosition.getX(), mPosition.getY(), mPosition.getZ());
-        Matrix.scaleM(resultMatrix, 0, mScale.getX(), mScale.getY(), mScale.getZ());
+        if(isDirty) {
+            float[] rotationMatrix = new float[16];
+            Matrix.setRotateM(rotationMatrix, 0, mRotateAngle, mRoateAxis.getX(), mRoateAxis.getY(), 1f);
+            Matrix.multiplyMM(resultMatrix, 0, mvpMatrix, 0, rotationMatrix, 0);
+            Matrix.translateM(resultMatrix, 0, mPosition.getX(), mPosition.getY(), mPosition.getZ());
+            Matrix.scaleM(resultMatrix, 0, mScale.getX(), mScale.getY(), mScale.getZ());
+        }
 
         int mMVPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix");
         GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, resultMatrix, 0);

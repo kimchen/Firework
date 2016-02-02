@@ -1,17 +1,18 @@
 package st.kimsmik.firework;
 
 import android.opengl.GLES20;
-import android.util.Log;
 
 /**
  * Created by chenk on 2016/2/1.
  */
 public class FireworkUtility {
+    public static long FIREWORK_LIFE_TIME = 5000;
     public static final float SCENE_HEIGHT = 100f;
     public static float FPS = 60f;
     public static float GRAVITY = -9.8f * 0.1f;
     public static float screenHeight = 0f;
     public static float screenWidth = 0f;
+
     public static int loadShader(int type, String shaderCode){
         int shader = GLES20.glCreateShader(type);
         GLES20.glShaderSource(shader, shaderCode);
